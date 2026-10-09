@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop-Owner Dashboard | Mobile World Sales &amp; Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/static/images/shop/logo.png">
+  <link rel="stylesheet" href="/static/css/admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="admin-navbar">
+    <div class="nav-container">
+      <div class="brand-section">
+        <img src="/static/images/shop/logo.png" alt="Mobile World Logo" class="brand-logo" />
+        <div>
+          <span class="brand-title">Mobile World</span>
+          <span class="brand-badge">Owner Portal</span>
+        </div>
+      </div>
+
+      <div class="user-controls">
+        <a href="/" class="store-link" target="_blank">
+          <span>View Live Store</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
+        </a>
+        <div style="font-size: 0.88rem; color: #64748b;">
+          Logged in: <strong style="color: #0f172a;">{{ user.username }}</strong>
+        </div>
+        <button id="logoutBtn" class="logout-btn">Log Out</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="dashboard-wrap">
+    
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-nav-btn active" data-tab="tab-overview">
+        <span>📊</span> Overview &amp; Analytics
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-orders">
+        <span>📦</span> Orders Management
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-products">
+        <span>🏷️</span> Products &amp; Stock
+      </button>
+      <button class="tab-nav-btn" data-tab="tab-logs">
+        <span>📜</span> Activity Audit Log
+      </button>
+    </nav>
+
+    <!-- Tab 1: Overview & Analytics -->
+    <div id="tab-overview" class="tab-panel active">
+      
+      <!-- Low Stock Warning Banner -->
+      <div id="lowStockBanner" class="alert-banner" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.4rem;">⚠️</span>
+          <div>
+            <strong>Low Inventory Warning:</strong>
+            <span id="lowStockBannerText">Some products have reached or fallen below minimum stock threshold.</span>
+          </div>
+        </div>
+        <button class="action-btn" onclick="switchTab('tab-products')">Inspect Stock</button>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card blue">
+          <div class="kpi-header">
+            <span class="kpi-title">Total Orders</span>
+            <span class="kpi-icon">📦</span>
+          </div>
+          <div id="kpiTotalOrders" class="kpi-val">0</div>
+          <div class="kpi-subtitle">In selected period</div>
+        </div>
+
+        <div class="kpi-card green">
+          <div class="kpi-header">
+            <span class="kpi-title">Collected Sales</span>
+            <span class="kpi-icon">💰</span>
+          </div>
+          <div id="kpiCollectedSales" class="kpi-val">₹0.00</div>
+          <div class="kpi-subtitle">Actual cash recorded</div>
+        </div>
+
+        <div class="kpi-card amber">
+          <div class="kpi-header">
+            <span class="kpi-title">COD Awaiting Collection</span>
+            <span class="kpi-icon">⏳</span>
+          </div>
+          <div id="kpiAwaitingCod" class="kpi-val">₹0.00</div>
+          <div class="kpi-subtitle">Uncollected shipments</div>
+        </div>
+
+        <div class="kpi-card purple">
+          <div class="kpi-header">
+            <span class="kpi-title">Avg Order Value</span>
+            <span class="kpi-icon">📈</span>
+          </div>
+          <div id="kpiAov" class="kpi-val">₹0.00</div>
+          <div class="kpi-subtitle">Active orders basis</div>
+        </div>
+
+        <div class="kpi-card red">
+          <div class="kpi-header">
+            <span class="kpi-title">Low Stock Items</span>
+            <span class="kpi-icon">🚨</span>
+          </div>
+          <div id="kpiLowStock" class="kpi-val">0</div>
+          <div class="kpi-subtitle">Need reorder attention</div>
+        </div>
+
+        <div class="kpi-card blue">
+          <div class="kpi-header">
+            <span class="kpi-title">Pending Orders</span>
+            <span class="kpi-icon">📋</span>
+          </div>
+          <div id="kpiPending" class="kpi-val">0</div>
+          <div class="kpi-subtitle">Awaiting dispatch</div>
+        </div>
+      </div>
+
+      <!-- Analytics Charts Section -->
+      <div class="charts-grid">
+        <!-- Sales Trend Line Chart -->
+        <div class="chart-card">
+          <div class="chart-head">
+            <div>
+              <h3 class="chart-title">Collected Sales vs. Order Value Trend</h3>
+              <p style="font-size: 0.8rem; color: #64748b;">Daily collected cash comparison</p>
+            </div>
+            <div class="chart-filter">
+              <button class="filter-btn active" data-range="7d" onclick="changeChartRange('7d', this)">7 Days</button>
+              <button class="filter-btn" data-range="30d" onclick="changeChartRange('30d', this)">30 Days</button>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="salesTrendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Orders by Status Doughnut Chart -->
+        <div class="chart-card">
+          <div class="chart-head">
+            <div>
+              <h3 class="chart-title">Orders by Status</h3>
+              <p style="font-size: 0.8rem; color: #64748b;">Current pipeline fulfillment</p>
+            </div>
+          </div>
+          <div class="chart-body">
+            <canvas id="orderStatusChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Second Row Charts: Top Selling & Payment Breakdown -->
+      <div class="charts-grid" style="grid-template-columns: 1.5fr 1fr;">
+        <div class="chart-card">
+          <div class="chart-head">
+            <h3 class="chart-title">Top Selling Products</h3>
+            <span style="font-size: 0.8rem; color: #64748b;">By units ordered</span>
+          </div>
+          <div class="chart-body">
+            <canvas id="topProductsChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-head">
+            <h3 class="chart-title">COD Cash Collection Summary</h3>
+          </div>
+          <div class="chart-body">
+            <canvas id="paymentSummaryChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Tab 2: Orders Management -->
+    <div id="tab-orders" class="tab-panel">
+      <div class="table-card">
+        <div class="table-toolbar">
+          <input type="text" id="orderSearch" class="search-field" placeholder="Search by Order Ref, Customer, Phone..." />
+          <div style="display: flex; gap: 10px;">
+            <select id="orderStatusFilter" class="filter-select">
+              <option value="all">All Order Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Confirmed">Confirmed</option>
+              <option value="Packed">Packed</option>
+              <option value="Shipped">Shipped</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Cancelled">Cancelled</option>
+              <option value="Returned">Returned</option>
+            </select>
+            <select id="paymentStatusFilter" class="filter-select">
+              <option value="all">All Payment States</option>
+              <option value="Pending COD">Pending COD</option>
+              <option value="Collected">Collected</option>
+            </select>
+            <button class="action-btn" onclick="loadAdminOrders()">↻ Refresh</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Reference</th>
+                <th>Date &amp; Time</th>
+                <th>Customer Details</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Payment Status</th>
+                <th>Fulfillment Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <!-- Rendered by admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Products & Inventory -->
+    <div id="tab-products" class="tab-panel">
+      <div class="table-card">
+        <div class="table-toolbar">
+          <input type="text" id="productSearch" class="search-field" placeholder="Search products, brand, SKU..." />
+          <div style="display: flex; gap: 10px;">
+            <select id="productCatFilter" class="filter-select">
+              <option value="all">All Categories</option>
+              <option value="Mobile Phones">Mobile Phones</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Services">Services</option>
+            </select>
+            <button class="action-btn collect" onclick="openAddProductModal()">+ Add New Product</button>
+            <button class="action-btn" onclick="loadAdminProducts()">↻ Refresh</button>
+          </div>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock Quantity</th>
+                <th>Low Threshold</th>
+                <th>Inventory Status</th>
+                <th>Active</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody">
+              <!-- Rendered by admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 4: Activity Audit Log -->
+    <div id="tab-logs" class="tab-panel">
+      <div class="table-card">
+        <div class="table-toolbar">
+          <h3 style="font-size: 1.1rem; font-weight: 800; color: #0f172a;">System &amp; Owner Audit Trail</h3>
+          <button class="action-btn" onclick="loadActivityLogs()">↻ Refresh Logs</button>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User / Agent</th>
+                <th>Action</th>
+                <th>Target Entity</th>
+                <th>Audit Details</th>
+                <th>Client IP</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody">
+              <!-- Rendered by admin.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Order Details & Status Transition Modal -->
+  <div id="orderModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-head">
+        <h3 id="modalOrderRef">Order Details</h3>
+        <button class="close-btn" onclick="closeOrderModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modalOrderContent">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Stock Adjustment Modal -->
+  <div id="stockModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-box" style="max-width: 420px;">
+      <div class="modal-head">
+        <h3>Adjust Stock on Hand</h3>
+        <button class="close-btn" onclick="closeStockModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="stockForm">
+          <input type="hidden" id="stockProdId" />
+          <div class="form-group">
+            <label class="form-label" id="stockProdName">Product</label>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Available Quantity *</label>
+            <input type="number" id="stockQtyInput" class="form-control" min="0" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Low Stock Threshold *</label>
+            <input type="number" id="stockThInput" class="form-control" min="1" required />
+          </div>
+          <button type="submit" class="action-btn collect" style="width: 100%; padding: 12px; font-size: 0.95rem;">Save Stock Changes</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div id="addProductModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-head">
+        <h3>Add New Catalogue Item</h3>
+        <button class="close-btn" onclick="closeAddProductModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="addProductForm">
+          <div class="form-group">
+            <label class="form-label">Product Name *</label>
+            <input type="text" id="newProdName" class="form-control" placeholder="e.g. Vivo V40e 5G" required />
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Brand *</label>
+              <input type="text" id="newProdBrand" class="form-control" placeholder="e.g. Vivo" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select id="newProdCat" class="form-control" required>
+                <option value="Mobile Phones">Mobile Phones</option>
+                <option value="Accessories">Accessories</option>
+                <option value="Services">Services</option>
+              </select>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Price (₹) *</label>
+              <input type="number" id="newProdPrice" class="form-control" step="0.01" min="0" placeholder="28999.00" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">SKU *</label>
+              <input type="text" id="newProdSku" class="form-control" placeholder="MW-PH-005" required />
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label class="form-label">Initial Stock *</label>
+              <input type="number" id="newProdStock" class="form-control" min="0" value="10" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Low Stock Threshold</label>
+              <input type="number" id="newProdThreshold" class="form-control" min="1" value="3" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea id="newProdDesc" class="form-control" rows="2" placeholder="Specifications or service warranty notes..."></textarea>
+          </div>
+          <button type="submit" class="action-btn collect" style="width: 100%; padding: 12px; font-size: 0.95rem;">Create Product Record</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="24" fill="url(#bg)"/>
+  <circle cx="200" cy="160" r="90" fill="#1428A0" opacity="0.2"/>
+  <rect x="135" y="80" width="130" height="180" rx="16" fill="#1E293B" stroke="#1428A0" stroke-width="4"/>
+  <circle cx="200" cy="240" r="6" fill="#1428A0"/>
+  <rect x="150" y="100" width="100" height="120" rx="6" fill="#0F172A" stroke="#334155" stroke-width="2"/>
+  <text x="200" y="310" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="18" font-weight="bold" fill="#F8FAFC" text-anchor="middle">Galaxy M35 5G</text>
+  <text x="200" y="338" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="13" fill="#94A3B8" text-anchor="middle">6000mAh • 120Hz Super AMOLED</text>
+</svg>
