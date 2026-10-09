@@ -1,11 +1,11 @@
 from flask import Blueprint, request, jsonify
-from flask_login import login_required
+from services.auth_guard import admin_required
 from services.order_service import OrderService
 
 analytics_bp = Blueprint("analytics", __name__)
 
 @analytics_bp.route("/api/admin/analytics/summary", methods=["GET"])
-@login_required
+@admin_required
 def get_analytics_summary():
     range_param = request.args.get("range", "7d")
     days = 7

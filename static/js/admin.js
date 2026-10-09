@@ -452,7 +452,10 @@ async function loadAdminProducts() {
           <td>${invBadge}</td>
           <td>${p.is_active ? '✓ Yes' : '✕ No'}</td>
           <td>
-            <button class="action-btn" onclick="openStockModal(${p.id})">Adjust Stock</button>
+            <div style="display: flex; gap: 6px;">
+              <button class="action-btn" onclick="openStockModal(${p.id})">Adjust Stock</button>
+              <button class="action-btn" onclick="promptEditPrice(${p.id}, ${p.price})" style="background: #e0f2fe; color: #0369a1; border-color: #bae6fd;">Edit Price</button>
+            </div>
           </td>
         </tr>
       `;
@@ -480,6 +483,30 @@ function openStockModal(productId) {
 
 function closeStockModal() {
   document.getElementById("stockModal").style.display = "none";
+}
+
+async function promptEditPrice(productId, currentPrice) {
+  const newPriceStr = prompt(`Enter new showroom price for product (Current: ₹${currentPrice}):`, currentPrice);
+  if (newPriceStr === null) return;
+  const newPrice = parseFloat(newPriceStr);
+  if (isNaN(newPrice) || newPrice <= 0) {
+    alert("Please enter a valid positive price.");
+    return;
+  }
+  try {
+    const res = await fetch(`/api/admin/products/${productId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ price: newPrice })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to update price");
+    alert(`Price updated to ₹${newPrice.toFixed(2)}! Any matching customer price drop alerts have been triggered.`);
+    loadAdminProducts();
+    loadAnalytics(currentRange);
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
 }
 
 document.getElementById("stockForm").addEventListener("submit", async (e) => {

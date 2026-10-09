@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+  <title>Activity Timeline • Mobile World Sales &amp; Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#0057c2",
+            "primary-container": "#006ef2",
+            "primary-fixed": "#d9e2ff",
+            "on-primary": "#ffffff",
+            secondary: "#006493",
+            "secondary-container": "#36b5fd",
+            "secondary-fixed": "#cae6ff",
+            "on-secondary-fixed": "#001e30",
+            surface: "#f9f9fe",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f3f3f9",
+            "surface-container": "#ededf3",
+            "surface-container-high": "#e8e8ed",
+            "surface-container-highest": "#e2e2e8",
+            "on-surface": "#1a1c20",
+            "on-surface-variant": "#414755",
+            outline: "#727786",
+            "outline-variant": "#c1c6d7",
+            tertiary: "#006b2f",
+            "tertiary-fixed": "#95f8a7",
+            "on-tertiary": "#ffffff",
+            error: "#ba1a1a",
+            "error-container": "#ffdad6"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-surface text-on-surface font-sans antialiased flex flex-col min-h-screen">
+  
+  <header class="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-surface-container-high shadow-xs">
+    <div class="max-w-2xl mx-auto h-16 px-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <a href="/account" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface hover:text-primary transition-colors">
+          <span class="material-symbols-outlined text-[24px]">arrow_back</span>
+        </a>
+        <h1 class="text-base font-bold text-on-surface">Account Activity Timeline</h1>
+      </div>
+      <span class="text-xs text-on-surface-variant font-mono">Private Log</span>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-2xl mx-auto pt-20 pb-20 px-4 space-y-4">
+    
+    <div class="bg-surface-container-lowest rounded-2xl p-5 shadow-sm border border-surface-container-high">
+      <div class="flex items-center gap-2 mb-4 pb-2 border-b border-surface-container-high">
+        <span class="material-symbols-outlined text-primary text-[20px]">history</span>
+        <h3 class="text-sm font-bold text-on-surface">Chronological Security &amp; Transaction History</h3>
+      </div>
+
+      {% if not activities or activities|length == 0 %}
+        <div class="py-8 text-center text-on-surface-variant text-xs">
+          No activity recorded on your account yet.
+        </div>
+      {% else %}
+        <div class="relative border-l border-surface-container-high ml-4 space-y-6 py-2">
+          {% for act in activities %}
+            <div class="relative pl-6">
+              <!-- Timeline Bullet Indicator -->
+              <div class="absolute -left-2 top-0.5 w-4 h-4 rounded-full bg-white border-2 border-primary flex items-center justify-center">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+              </div>
+
+              <div class="bg-surface-container-low p-3.5 rounded-xl border border-surface-container-high text-xs space-y-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-bold text-on-surface text-sm">{{ act.title }}</span>
+                  <span class="font-mono text-[10px] text-outline">{{ act.created_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+                </div>
+                {% if act.description %}
+                  <p class="text-on-surface-variant leading-relaxed">{{ act.description }}</p>
+                {% endif %}
+                <span class="inline-block mt-1 text-[10px] font-mono px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-semibold">
+                  {{ act.event_type }}
+                </span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+    </div>
+
+  </main>
+
+</body>
+</html>

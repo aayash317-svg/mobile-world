@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+  <title>Notifications Centre • Mobile World Sales &amp; Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#0057c2",
+            "primary-container": "#006ef2",
+            "primary-fixed": "#d9e2ff",
+            "on-primary": "#ffffff",
+            secondary: "#006493",
+            "secondary-container": "#36b5fd",
+            "secondary-fixed": "#cae6ff",
+            "on-secondary-fixed": "#001e30",
+            surface: "#f9f9fe",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f3f3f9",
+            "surface-container": "#ededf3",
+            "surface-container-high": "#e8e8ed",
+            "surface-container-highest": "#e2e2e8",
+            "on-surface": "#1a1c20",
+            "on-surface-variant": "#414755",
+            outline: "#727786",
+            "outline-variant": "#c1c6d7",
+            tertiary: "#006b2f",
+            "tertiary-fixed": "#95f8a7",
+            "on-tertiary": "#ffffff",
+            error: "#ba1a1a",
+            "error-container": "#ffdad6",
+            "inverse-surface": "#2f3035",
+            "inverse-on-surface": "#f0f0f6"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-surface text-on-surface font-sans antialiased flex flex-col min-h-screen">
+  
+  <header class="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-surface-container-high shadow-xs">
+    <div class="max-w-2xl mx-auto h-16 px-4 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <a href="/account" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface hover:text-primary transition-colors">
+          <span class="material-symbols-outlined text-[24px]">arrow_back</span>
+        </a>
+        <h1 class="text-base font-bold text-on-surface">Notifications Centre</h1>
+      </div>
+      <button id="markAllReadBtn" class="text-xs text-primary font-semibold hover:underline">
+        Mark all as read
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 w-full max-w-2xl mx-auto pt-20 pb-20 px-4 space-y-4">
+    
+    <!-- Category Filter Chips -->
+    <div class="flex items-center gap-2 overflow-x-auto py-1 no-scrollbar">
+      <button onclick="filterCategory('all')" class="cat-chip px-3.5 py-1.5 rounded-full bg-primary text-on-primary text-xs font-semibold shadow-xs" data-cat="all">
+        All
+      </button>
+      <button onclick="filterCategory('order')" class="cat-chip px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high text-xs font-semibold" data-cat="order">
+        Orders
+      </button>
+      <button onclick="filterCategory('price_drop')" class="cat-chip px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high text-xs font-semibold" data-cat="price_drop">
+        Price Drops
+      </button>
+      <button onclick="filterCategory('security')" class="cat-chip px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high text-xs font-semibold" data-cat="security">
+        Security
+      </button>
+    </div>
+
+    <!-- Notifications List -->
+    <div id="notificationsContainer" class="space-y-3">
+      {% if not notifications or notifications|length == 0 %}
+        <div class="bg-surface-container-lowest rounded-2xl p-10 text-center border border-surface-container-high shadow-sm">
+          <span class="material-symbols-outlined text-4xl text-outline mb-2">notifications_none</span>
+          <h3 class="text-sm font-bold text-on-surface">No Notifications Yet</h3>
+          <p class="text-xs text-on-surface-variant mt-1">You're all caught up! Updates regarding your COD parcels and price alerts will show up here.</p>
+        </div>
+      {% else %}
+        {% for notif in notifications %}
+          <div 
+            class="notif-card bg-surface-container-lowest rounded-2xl p-4 shadow-sm border border-surface-container-high flex items-start justify-between gap-3 transition-all hover:shadow-md cursor-pointer {% if not notif.is_read %}border-l-4 border-l-primary bg-primary-fixed/10{% endif %}"
+            data-type="{{ notif.type }}"
+            onclick="markReadAndOpen({{ notif.id }}, '{{ notif.link_url or '' }}')"
+          >
+            <div class="flex items-start gap-3 min-w-0">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 mt-0.5 {% if notif.type == 'order' %}bg-primary-fixed text-primary{% elif notif.type == 'price_drop' %}bg-secondary-fixed text-secondary{% elif notif.type == 'security' %}bg-tertiary-fixed text-tertiary{% else %}bg-surface-container-high text-on-surface{% endif %}">
+                {% if notif.type == 'order' %}
+                  <span class="material-symbols-outlined text-[20px]">local_shipping</span>
+                {% elif notif.type == 'price_drop' %}
+                  <span class="material-symbols-outlined text-[20px]">trending_down</span>
+                {% elif notif.type == 'security' %}
+                  <span class="material-symbols-outlined text-[20px]">shield</span>
+                {% else %}
+                  <span class="material-symbols-outlined text-[20px]">notifications</span>
+                {% endif %}
+              </div>
+
+              <div class="min-w-0 text-xs">
+                <div class="flex items-center gap-1.5">
+                  {% if not notif.is_read %}
+                    <span class="w-2 h-2 rounded-full bg-primary shrink-0"></span>
+                  {% endif %}
+                  <h4 class="font-bold text-on-surface truncate">{{ notif.title }}</h4>
+                </div>
+                <p class="text-on-surface-variant mt-0.5 leading-relaxed">{{ notif.message }}</p>
+                <span class="text-[10px] text-outline mt-1 block font-mono">{{ notif.created_at.strftime('%d %b, %I:%M %p') }}</span>
+              </div>
+            </div>
+
+            {% if notif.link_url %}
+              <span class="material-symbols-outlined text-outline text-[18px] shrink-0 mt-1">arrow_forward</span>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+  </main>
+
+  <script>
+    function filterCategory(cat) {
+      document.querySelectorAll('.cat-chip').forEach(btn => {
+        if (btn.dataset.cat === cat) {
+          btn.className = 'cat-chip px-3.5 py-1.5 rounded-full bg-primary text-on-primary text-xs font-semibold shadow-xs';
+        } else {
+          btn.className = 'cat-chip px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high text-xs font-semibold';
+        }
+      });
+
+      document.querySelectorAll('.notif-card').forEach(card => {
+        if (cat === 'all' || card.dataset.type === cat) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+    }
+
+    async function markReadAndOpen(notifId, linkUrl) {
+      try {
+        await fetch(`/api/customer/notifications/${notifId}/read`, { method: 'POST' });
+      } catch (e) {}
+
+      if (linkUrl) {
+        window.location.href = linkUrl;
+      } else {
+        window.location.reload();
+      }
+    }
+
+    document.getElementById('markAllReadBtn')?.addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/customer/notifications/mark-all-read', { method: 'POST' });
+        if (res.ok) window.location.reload();
+      } catch (err) {
+        alert("Failed to mark all as read.");
+      }
+    });
+  </script>
+</body>
+</html>

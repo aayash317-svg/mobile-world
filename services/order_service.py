@@ -17,7 +17,8 @@ class OrderService:
         items_payload: list,
         order_notes: str = None,
         customer_email: str = None,
-        idempotency_key: str = None
+        idempotency_key: str = None,
+        customer_id: int = None
     ) -> Order:
         """
         Creates a new COD order with server-side calculation and concurrency-safe stock deduction.
@@ -74,6 +75,7 @@ class OrderService:
             new_order = Order(
                 order_reference=Order.generate_reference(),
                 idempotency_key=idempotency_key,
+                customer_id=customer_id,
                 customer_name=customer_name.strip(),
                 customer_phone=customer_phone.strip(),
                 customer_email=customer_email.strip() if customer_email else None,
@@ -107,6 +109,25 @@ class OrderService:
                 details=f"Ref: {new_order.order_reference}, Total: ₹{final_total}, Items: {len(order_items_to_create)}",
                 username="Customer"
             )
+
+            # Customer in-app notification & activity log
+            if customer_id:
+                from services.customer_service import CustomerService
+                CustomerService.create_notification(
+                    customer_id=customer_id,
+                    type="order",
+                    title="Order Placed Successfully",
+                    message=f"Your COD order #{new_order.order_reference} for ₹{final_total:,.2f} has been received and is pending confirmation.",
+                    link_url=f"/account/orders"
+                )
+                CustomerService.log_activity(
+                    customer_id=customer_id,
+                    event_type="ORDER_PLACED",
+                    title=f"Placed Order #{new_order.order_reference}",
+                    description=f"{len(order_items_to_create)} item(s) • Total ₹{final_total:,.2f} via Cash on Delivery",
+                    entity_type="Order",
+                    entity_id=str(new_order.id)
+                )
 
             return new_order
 
@@ -159,6 +180,25 @@ class OrderService:
             details=f"Order {order.order_reference}: {old_status} -> {new_status}",
             username=changed_by
         )
+
+        # Notify Customer in real-time
+        if order.customer_id:
+            from services.customer_service import CustomerService
+            CustomerService.create_notification(
+                customer_id=order.customer_id,
+                type="order",
+                title=f"Order Update: {new_status}",
+                message=f"Order #{order.order_reference} status has been updated to '{new_status}'.",
+                link_url="/account/orders"
+            )
+            CustomerService.log_activity(
+                customer_id=order.customer_id,
+                event_type="ORDER_UPDATED",
+                title=f"Order #{order.order_reference} -> {new_status}",
+                description=f"Status changed from {old_status} to {new_status}",
+                entity_type="Order",
+                entity_id=str(order.id)
+            )
 
         return order
 

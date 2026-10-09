@@ -2,6 +2,7 @@ import time
 from decimal import Decimal
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
+from services.auth_guard import admin_required
 from models import db
 from models.user import User
 from models.product import Product
@@ -118,7 +119,7 @@ def logout():
 
 @admin_bp.route("/admin/")
 @admin_bp.route("/admin/dashboard")
-@login_required
+@admin_required
 def dashboard():
     return render_template("admin/dashboard.html", user=current_user)
 
@@ -126,7 +127,7 @@ def dashboard():
 # --- Protected Admin APIs ---
 
 @admin_bp.route("/api/admin/orders", methods=["GET"])
-@login_required
+@admin_required
 def get_orders():
     status = request.args.get("status")
     payment_status = request.args.get("payment_status")
@@ -153,7 +154,7 @@ def get_orders():
 
 
 @admin_bp.route("/api/admin/orders/<int:order_id>", methods=["PATCH"])
-@login_required
+@admin_required
 def update_order(order_id):
     data = request.get_json()
     if not data:
@@ -197,7 +198,7 @@ def update_order(order_id):
 
 
 @admin_bp.route("/api/admin/products", methods=["POST"])
-@login_required
+@admin_required
 def create_product():
     data = request.get_json()
     if not data:
@@ -256,7 +257,7 @@ def create_product():
 
 
 @admin_bp.route("/api/admin/products/<int:product_id>", methods=["PATCH"])
-@login_required
+@admin_required
 def update_product(product_id):
     product = Product.query.get_or_404(product_id)
     data = request.get_json()
@@ -275,8 +276,11 @@ def update_product(product_id):
         if "price" in data:
             new_p = Decimal(str(data["price"]))
             if new_p != product.price:
+                old_p = product.price
                 changes.append(f"price: ₹{product.price} -> ₹{new_p}")
                 product.price = new_p
+                from services.customer_service import CustomerService
+                CustomerService.check_price_drop_alerts(product.id, old_p, new_p)
         if "description" in data:
             product.description = data["description"].strip()
         if "image_url" in data:
@@ -312,7 +316,7 @@ def update_product(product_id):
 
 
 @admin_bp.route("/api/admin/inventory/<int:product_id>", methods=["PATCH"])
-@login_required
+@admin_required
 def adjust_inventory(product_id):
     data = request.get_json()
     if not data or "stock" not in data:
@@ -344,7 +348,7 @@ def adjust_inventory(product_id):
 
 
 @admin_bp.route("/api/admin/activity-logs", methods=["GET"])
-@login_required
+@admin_required
 def get_activity_logs():
     limit = int(request.args.get("limit", 50))
     logs = ActivityService.get_recent_logs(limit=limit)

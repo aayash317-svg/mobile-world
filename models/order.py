@@ -48,6 +48,7 @@ class Order(db.Model):
     idempotency_key = db.Column(db.String(128), unique=True, nullable=True, index=True)
     
     # Customer Details
+    customer_id = db.Column(db.Integer, db.ForeignKey("customers.id", ondelete="SET NULL"), nullable=True, index=True)
     customer_name = db.Column(db.String(150), nullable=False)
     customer_phone = db.Column(db.String(30), nullable=False, index=True)
     customer_email = db.Column(db.String(150), nullable=True)
@@ -71,6 +72,7 @@ class Order(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # Relationships
+    customer = db.relationship("Customer", back_populates="orders")
     items = db.relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
     payments = db.relationship("PaymentRecord", back_populates="order", cascade="all, delete-orphan")
     history = db.relationship("OrderStatusHistory", back_populates="order", cascade="all, delete-orphan", order_by="OrderStatusHistory.created_at.desc()")
@@ -85,6 +87,7 @@ class Order(db.Model):
         data = {
             "id": self.id,
             "order_reference": self.order_reference,
+            "customer_id": self.customer_id,
             "customer_name": self.customer_name,
             "customer_phone": self.customer_phone,
             "customer_email": self.customer_email,

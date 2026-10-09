@@ -8,10 +8,16 @@ from models.user import User
 from models.product import Product
 from models.order import Inventory, Order, OrderItem, PaymentRecord, OrderStatusHistory
 from models.activity_log import ActivityLog
+from models.customer import Customer, CustomerAddress, CustomerOTP, PasswordResetToken
+from models.notification import CustomerNotification
+from models.customer_activity import CustomerActivity
+from models.price_alert import PriceDropAlert
 from routes.customer import customer_bp
+from routes.auth import auth_bp
 from routes.orders import orders_bp
 from routes.admin import admin_bp
 from routes.analytics import analytics_bp
+from services.auth_guard import get_current_customer
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -36,6 +42,7 @@ def create_app(config_class=Config):
 
     # Register blueprints
     app.register_blueprint(customer_bp)
+    app.register_blueprint(auth_bp)
     app.register_blueprint(orders_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(analytics_bp)
@@ -43,9 +50,18 @@ def create_app(config_class=Config):
     # Context processors & template helpers
     @app.context_processor
     def inject_shop_info():
+        customer = get_current_customer()
+        unread_notifs = 0
+        if customer:
+            try:
+                unread_notifs = CustomerNotification.query.filter_by(customer_id=customer.id, is_read=False).count()
+            except Exception:
+                unread_notifs = 0
         return {
             "shop_name": "Mobile World Sales & Service",
-            "flat_delivery_fee": float(app.config.get("FLAT_DELIVERY_FEE", 50.00))
+            "flat_delivery_fee": float(app.config.get("FLAT_DELIVERY_FEE", 50.00)),
+            "current_customer": customer,
+            "unread_notif_count": unread_notifs
         }
 
     return app

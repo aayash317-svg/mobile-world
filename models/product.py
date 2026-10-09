@@ -12,6 +12,11 @@ class Product(db.Model):
     category = db.Column(db.String(100), nullable=False, index=True)  # Mobile Phones, Accessories, Services
     description = db.Column(db.Text, nullable=True)
     price = db.Column(db.Numeric(10, 2), nullable=False)
+    mrp = db.Column(db.Numeric(10, 2), nullable=True)  # Strikethrough original MRP
+    ram = db.Column(db.String(50), nullable=True)
+    storage = db.Column(db.String(50), nullable=True)
+    color = db.Column(db.String(50), nullable=True)
+    warranty_months = db.Column(db.Integer, default=12, nullable=False)
     image_url = db.Column(db.String(500), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -42,6 +47,7 @@ class Product(db.Model):
         return self.inventory.quantity <= 0
 
     def to_dict(self, include_inventory=True):
+        mrp_val = float(self.mrp) if self.mrp else float(self.price) * 1.2
         data = {
             "id": self.id,
             "sku": self.sku,
@@ -51,6 +57,12 @@ class Product(db.Model):
             "description": self.description,
             "price": float(self.price),
             "price_formatted": f"₹{self.price:,.2f}",
+            "mrp": mrp_val,
+            "mrp_formatted": f"₹{mrp_val:,.2f}",
+            "ram": self.ram,
+            "storage": self.storage,
+            "color": self.color,
+            "warranty_months": self.warranty_months,
             "image_url": self.image_url,
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat() if self.created_at else None,
