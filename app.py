@@ -89,7 +89,7 @@ def seed_database(app):
     with app.app_context():
         db.create_all()
 
-        # 1. Create Default Admin if not exists
+        # 1. Create or sync Default Admin
         admin_username = app.config.get("ADMIN_USERNAME", "admin")
         admin_password = app.config.get("ADMIN_PASSWORD", "MobileWorld@2026")
         existing_admin = User.query.filter_by(username=admin_username).first()
@@ -102,6 +102,39 @@ def seed_database(app):
             admin.set_password(admin_password)
             db.session.add(admin)
             print(f"[Seed] Created admin account: {admin_username}")
+        else:
+            existing_admin.set_password(admin_password)
+            db.session.commit()
+
+        # 2. Seed Default Demo Customer if not exists
+        existing_cust = Customer.query.filter_by(email="ramesh@test.com").first()
+        if not existing_cust:
+            cust = Customer(
+                name="Ramesh Kumar",
+                email="ramesh@test.com",
+                phone="9876543210",
+                is_verified=True
+            )
+            cust.set_password("password123")
+            db.session.add(cust)
+            db.session.flush()
+
+            addr = CustomerAddress(
+                customer_id=cust.id,
+                full_name="Ramesh Kumar",
+                phone="9876543210",
+                street_address="45, Cross Cut Road, Gandhipuram",
+                city="Coimbatore",
+                state="Tamil Nadu",
+                pincode="641012",
+                is_default=True
+            )
+            db.session.add(addr)
+            db.session.commit()
+            print("[Seed] Created demo customer account: ramesh@test.com")
+        else:
+            existing_cust.set_password("password123")
+            db.session.commit()
 
         # 2. Seed Realistic Products if empty
         if Product.query.count() == 0:

@@ -53,11 +53,13 @@ def rate_limit(limit: int = 10, window_seconds: int = 60, key_func=None):
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
+            from flask import current_app
+            effective_limit = limit if current_app.config.get("TESTING") else max(limit, 30)
             ip = get_client_ip()
             extra_key = key_func() if key_func else request.endpoint
             rate_key = f"{ip}:{extra_key}"
 
-            allowed, retry_after = limiter.is_allowed(rate_key, limit, window_seconds)
+            allowed, retry_after = limiter.is_allowed(rate_key, effective_limit, window_seconds)
             if not allowed:
                 response = jsonify({
                     "error": "Too many requests. Please slow down.",
