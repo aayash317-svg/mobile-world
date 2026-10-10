@@ -131,11 +131,16 @@
         <!-- Feedback & Status Message -->
         <div id="feedback-strip" class="mt-3 min-h-[22px] flex items-center justify-center gap-1.5 text-center text-xs text-on-surface-variant transition-all">
           <span class="material-symbols-outlined text-[15px] text-tertiary">info</span>
-          <span id="feedback-text">Enter the 6-digit code to continue</span>
+          <span id="feedback-text">Enter the verification code to continue</span>
         </div>
 
-        <div class="mt-2 text-center text-[11px] text-outline">
-          💡 Local Testing: Check terminal console or enter test code <strong class="font-mono text-primary font-bold">123456</strong>
+        <div class="mt-3 text-center flex flex-col items-center justify-center gap-1.5">
+          <button type="button" id="demo-fill-btn" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary hover:text-white text-xs font-bold transition-all border border-primary/20 shadow-xs cursor-pointer">
+            <span class="material-symbols-outlined text-[15px]">bolt</span> Quick Demo OTP: <span class="font-mono underline">0000</span>
+          </button>
+          <span class="text-[11px] text-outline">
+            Universal demo code <strong>0000</strong> or <strong>000000</strong> is active for all logins.
+          </span>
         </div>
       </div>
 
@@ -224,22 +229,30 @@
     });
 
     function fillOtp(codeStr) {
-      codeStr.split('').slice(0, 6).forEach((char, i) => {
-        if (digits[i]) digits[i].value = char;
+      digits.forEach((d, i) => {
+        d.value = codeStr[i] || '';
       });
-      digits[5].focus();
+      digits[Math.min(codeStr.length - 1, 5)].focus();
       checkFullCode();
     }
 
     function checkFullCode() {
       const code = digits.map(d => d.value).join('');
-      if (code.length === 6) {
-        feedbackStrip.className = 'mt-3 min-h-[22px] flex items-center justify-center gap-1.5 text-center text-xs text-tertiary';
+      if (code === '0000' || code.length === 6) {
+        feedbackStrip.className = 'mt-3 min-h-[22px] flex items-center justify-center gap-1.5 text-center text-xs text-tertiary font-semibold';
         feedbackStrip.innerHTML = '<span class="material-symbols-outlined text-[15px]">check_circle</span> Ready to verify';
       } else {
         feedbackStrip.className = 'mt-3 min-h-[22px] flex items-center justify-center gap-1.5 text-center text-xs text-on-surface-variant';
         feedbackStrip.innerHTML = `<span class="material-symbols-outlined text-[15px]">info</span> ${6 - code.length} digits remaining`;
       }
+    }
+
+    const demoFillBtn = document.getElementById('demo-fill-btn');
+    if (demoFillBtn) {
+      demoFillBtn.addEventListener('click', () => {
+        fillOtp('0000');
+        verifyBtn.click();
+      });
     }
 
     // Try reading clipboard on load
@@ -316,10 +329,10 @@
 
     // Verify Action
     verifyBtn.addEventListener('click', async () => {
-      const code = digits.map(d => d.value).join('');
-      if (code.length !== 6) {
+      let code = digits.map(d => d.value).join('');
+      if (code !== '0000' && code.length !== 6) {
         feedbackStrip.className = 'mt-3 min-h-[22px] flex items-center justify-center gap-1.5 text-center text-xs text-error';
-        feedbackStrip.innerHTML = '<span class="material-symbols-outlined text-[15px]">error</span> Please enter all 6 digits.';
+        feedbackStrip.innerHTML = '<span class="material-symbols-outlined text-[15px]">error</span> Please enter the code (or demo code 0000).';
         return;
       }
 
