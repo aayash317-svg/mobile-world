@@ -13,7 +13,9 @@ class Config:
     
     # Database Settings
     database_url = os.environ.get("DATABASE_URL")
-    DB_TYPE = os.environ.get("DB_TYPE", "mysql").lower()
+    is_cloud_platform = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID") or os.environ.get("RAILWAY_ENVIRONMENT"))
+    default_db_type = "sqlite" if is_cloud_platform else "mysql"
+    DB_TYPE = os.environ.get("DB_TYPE", default_db_type).lower()
     DB_USER = os.environ.get("DB_USER", "mobile_user")
     DB_PASSWORD = os.environ.get("DB_PASSWORD", "MobileWorld@2026")
     DB_HOST = os.environ.get("DB_HOST", "localhost")

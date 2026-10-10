@@ -71,7 +71,16 @@ def create_app(config_class=Config):
                 db.create_all()
                 seed_database(app)
             except Exception as e:
-                print(f"[Init] Database initialization note: {e}")
+                print(f"[Init] Initial DB setup note: {e}")
+                if "mysql" in str(app.config.get("SQLALCHEMY_DATABASE_URI", "")):
+                    print("[Database Fallback] Falling back to SQLite for cloud deployment.")
+                    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(Config.BASE_DIR, 'mobile_world.db')}"
+                    db.init_app(app)
+                    try:
+                        db.create_all()
+                        seed_database(app)
+                    except Exception as inner_e:
+                        print(f"[Fallback Error] {inner_e}")
 
     return app
 
