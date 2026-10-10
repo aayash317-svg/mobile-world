@@ -12,6 +12,7 @@ class Config:
     SECRET_KEY = os.environ.get("SECRET_KEY", "mobile-world-dev-secret-key-2026")
     
     # Database Settings
+    database_url = os.environ.get("DATABASE_URL")
     DB_TYPE = os.environ.get("DB_TYPE", "mysql").lower()
     DB_USER = os.environ.get("DB_USER", "mobile_user")
     DB_PASSWORD = os.environ.get("DB_PASSWORD", "MobileWorld@2026")
@@ -20,7 +21,11 @@ class Config:
     DB_NAME = os.environ.get("DB_NAME", "mobile_world_db")
     
     encoded_password = quote_plus(DB_PASSWORD)
-    if DB_TYPE == "mysql":
+    if database_url:
+        if database_url.startswith("postgres://"):
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
+        SQLALCHEMY_DATABASE_URI = database_url
+    elif DB_TYPE == "mysql":
         SQLALCHEMY_DATABASE_URI = (
             f"mysql+pymysql://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
         )

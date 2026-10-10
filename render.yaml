@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: mobile-world-store
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn "app:app" --workers 2 --threads 4 --timeout 120
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_PASSWORD
+        value: MobileWorld@2026
+      - key: FLAT_DELIVERY_FEE
+        value: "50.00"
+      - key: DB_TYPE
+        value: sqlite

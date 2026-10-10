@@ -64,6 +64,15 @@ def create_app(config_class=Config):
             "unread_notif_count": unread_notifs
         }
 
+    # Auto-initialize and seed database on startup (skip in automated test suite)
+    if not app.config.get("TESTING"):
+        with app.app_context():
+            try:
+                db.create_all()
+                seed_database(app)
+            except Exception as e:
+                print(f"[Init] Database initialization note: {e}")
+
     return app
 
 
@@ -73,7 +82,7 @@ def seed_database(app):
 
         # 1. Create Default Admin if not exists
         admin_username = app.config.get("ADMIN_USERNAME", "admin")
-        admin_password = app.config.get("ADMIN_PASSWORD", "admin123")
+        admin_password = app.config.get("ADMIN_PASSWORD", "MobileWorld@2026")
         existing_admin = User.query.filter_by(username=admin_username).first()
         if not existing_admin:
             admin = User(
@@ -94,8 +103,9 @@ def seed_database(app):
                     "brand": "OnePlus",
                     "category": "Mobile Phones",
                     "price": Decimal("24999.00"),
+                    "mrp": Decimal("26999.00"),
                     "description": "Qualcomm Snapdragon 7 Gen 3, 100W SUPERVOOC charging, 50MP Sony LYT-600 OIS camera.",
-                    "image_url": "/static/images/products/phone_oneplus.svg",
+                    "image_url": "/static/images/products/phone_oneplus.jpg",
                     "stock": 8,
                     "low_threshold": 3
                 },
@@ -105,8 +115,9 @@ def seed_database(app):
                     "brand": "Samsung",
                     "category": "Mobile Phones",
                     "price": Decimal("16999.00"),
+                    "mrp": Decimal("19999.00"),
                     "description": "Monster 6000mAh battery, Exynos 1380 processor, 120Hz sAMOLED display with Corning Gorilla Glass Victus+.",
-                    "image_url": "/static/images/products/phone_samsung.svg",
+                    "image_url": "/static/images/products/phone_samsung.jpg",
                     "stock": 12,
                     "low_threshold": 4
                 },
@@ -116,8 +127,9 @@ def seed_database(app):
                     "brand": "Xiaomi",
                     "category": "Mobile Phones",
                     "price": Decimal("18499.00"),
+                    "mrp": Decimal("20999.00"),
                     "description": "108MP ProLight camera, ultra-slim 120Hz AMOLED display, MediaTek Dimensity 6080.",
-                    "image_url": "/static/images/products/phone_redmi.svg",
+                    "image_url": "/static/images/products/phone_redmi.jpg",
                     "stock": 5,
                     "low_threshold": 3
                 },
@@ -127,10 +139,35 @@ def seed_database(app):
                     "brand": "Realme",
                     "category": "Mobile Phones",
                     "price": Decimal("14999.00"),
+                    "mrp": Decimal("16999.00"),
                     "description": "MediaTek Dimensity 7300 Energy 5G chip, stainless steel vapor cooling area, motorsport inspired design.",
-                    "image_url": "/static/images/products/phone_realme.svg",
-                    "stock": 2,  # Low stock test case
+                    "image_url": "/static/images/products/phone_realme.jpg",
+                    "stock": 2,
                     "low_threshold": 3
+                },
+                {
+                    "sku": "MW-VIVO-V30E",
+                    "name": "Vivo V30e 5G (8GB / 256GB)",
+                    "brand": "Vivo",
+                    "category": "Mobile Phones",
+                    "price": Decimal("27999.00"),
+                    "mrp": Decimal("32999.00"),
+                    "description": "Studio Quality Aura Light Portrait, 3D Curved AMOLED Display, 5500mAh Battery with 44W FlashCharge.",
+                    "image_url": "/static/images/products/phone_vivo.jpg",
+                    "stock": 14,
+                    "low_threshold": 3
+                },
+                {
+                    "sku": "MW-APL-IP15-BLK",
+                    "name": "Apple iPhone 15 (128GB - Black)",
+                    "brand": "Apple",
+                    "category": "Mobile Phones",
+                    "price": Decimal("69900.00"),
+                    "mrp": Decimal("79900.00"),
+                    "description": "Dynamic Island, 48MP Main Camera with 2x Telephoto, Color-infused Glass and Aluminum Design, USB-C Connectivity.",
+                    "image_url": "/static/images/products/phone_iphone.jpg",
+                    "stock": 8,
+                    "low_threshold": 2
                 },
                 {
                     "sku": "MW-AC-001",
@@ -138,8 +175,9 @@ def seed_database(app):
                     "brand": "Mobile World Gear",
                     "category": "Accessories",
                     "price": Decimal("1299.00"),
+                    "mrp": Decimal("1999.00"),
                     "description": "Compact GaN fast charger with USB-C and USB-A ports, surge protection, suitable for all smartphones.",
-                    "image_url": "/static/images/products/charger.svg",
+                    "image_url": "/static/images/products/charger.jpg",
                     "stock": 25,
                     "low_threshold": 5
                 },
@@ -149,8 +187,9 @@ def seed_database(app):
                     "brand": "Mobile World Gear",
                     "category": "Accessories",
                     "price": Decimal("399.00"),
+                    "mrp": Decimal("699.00"),
                     "description": "Heavy-duty nylon braided cable supporting 100W PD and fast data sync with reinforced stress joints.",
-                    "image_url": "/static/images/products/cable.svg",
+                    "image_url": "/static/images/products/cable.jpg",
                     "stock": 40,
                     "low_threshold": 10
                 },
@@ -160,8 +199,9 @@ def seed_database(app):
                     "brand": "ArmorShield",
                     "category": "Accessories",
                     "price": Decimal("249.00"),
+                    "mrp": Decimal("499.00"),
                     "description": "Edge-to-edge full coverage 9H hardness tempered glass with oleophobic anti-fingerprint coating.",
-                    "image_url": "/static/images/products/glass.svg",
+                    "image_url": "/static/images/products/glass.jpg",
                     "stock": 35,
                     "low_threshold": 10
                 },
@@ -171,10 +211,47 @@ def seed_database(app):
                     "brand": "ArmorShield",
                     "category": "Accessories",
                     "price": Decimal("499.00"),
+                    "mrp": Decimal("899.00"),
                     "description": "Military-grade dual-layer drop protection with integrated 360-degree rotating ring stand.",
-                    "image_url": "/static/images/products/case.svg",
+                    "image_url": "/static/images/products/case.jpg",
                     "stock": 18,
                     "low_threshold": 5
+                },
+                {
+                    "sku": "MW-AUDIO-TWS-ANC",
+                    "name": "True Wireless ANC Active Noise-Cancelling Earbuds",
+                    "brand": "SoundWave Pro",
+                    "category": "Accessories",
+                    "price": Decimal("2499.00"),
+                    "mrp": Decimal("4999.00"),
+                    "description": "Hybrid 35dB Active Noise Cancellation, Quad Mics for Crystal Clear Calling, 38 Hours Playtime.",
+                    "image_url": "/static/images/products/earbuds.jpg",
+                    "stock": 25,
+                    "low_threshold": 5
+                },
+                {
+                    "sku": "MW-PWR-20K-65W",
+                    "name": "20000mAh 65W PD Ultra-Fast Power Bank with LED",
+                    "brand": "Mobile World Gear",
+                    "category": "Accessories",
+                    "price": Decimal("2199.00"),
+                    "mrp": Decimal("3499.00"),
+                    "description": "65W Power Delivery laptop & smartphone fast charging, precision digital percentage screen.",
+                    "image_url": "/static/images/products/powerbank.jpg",
+                    "stock": 20,
+                    "low_threshold": 5
+                },
+                {
+                    "sku": "MW-WCH-AMOLED-PRO",
+                    "name": 'Aura Pro 1.43" AMOLED Bluetooth Calling Smartwatch',
+                    "brand": "Mobile World Gear",
+                    "category": "Accessories",
+                    "price": Decimal("2899.00"),
+                    "mrp": Decimal("5999.00"),
+                    "description": "1000 Nits Ultra-Bright AMOLED Display, Functional Rotating Crown, 24/7 Heart & SpO2 Tracker.",
+                    "image_url": "/static/images/products/smartwatch.jpg",
+                    "stock": 18,
+                    "low_threshold": 4
                 },
                 {
                     "sku": "MW-SV-001",
@@ -182,8 +259,9 @@ def seed_database(app):
                     "brand": "Mobile World Service",
                     "category": "Services",
                     "price": Decimal("2199.00"),
+                    "mrp": Decimal("2999.00"),
                     "description": "Express 1-hour screen replacement using OEM grade displays. Includes 90-day touch warranty and free tempered glass installation.",
-                    "image_url": "/static/images/products/service_screen.svg",
+                    "image_url": "/static/images/products/service_screen.jpg",
                     "stock": 99,
                     "low_threshold": 5
                 },
@@ -193,8 +271,9 @@ def seed_database(app):
                     "brand": "Mobile World Service",
                     "category": "Services",
                     "price": Decimal("1499.00"),
+                    "mrp": Decimal("1999.00"),
                     "description": "Restore all-day battery life with certified high-efficiency cell replacement. 6 months warranty included.",
-                    "image_url": "/static/images/products/service_battery.svg",
+                    "image_url": "/static/images/products/service_battery.jpg",
                     "stock": 99,
                     "low_threshold": 5
                 }
@@ -207,6 +286,7 @@ def seed_database(app):
                     brand=item["brand"],
                     category=item["category"],
                     price=item["price"],
+                    mrp=item.get("mrp"),
                     description=item["description"],
                     image_url=item["image_url"],
                     is_active=True
