@@ -145,22 +145,49 @@
     <div id="errorAlert" class="alert-error"></div>
 
     <form id="loginForm">
-      <div class="form-group">
-        <label class="form-label" for="username">Username</label>
-        <input type="text" id="username" class="form-control" value="admin" required />
+      <div id="credentialsStep">
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input type="text" id="username" class="form-control" value="admin" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" class="form-control" value="MobileWorld@2026" required />
+        </div>
+
+        <button type="submit" id="loginBtn" class="login-btn">Continue to Security Check</button>
       </div>
 
-      <div class="form-group">
-        <label class="form-label" for="password">Password</label>
-        <input type="password" id="password" class="form-control" value="admin123" required />
-      </div>
+      <div id="otpStep" style="display: none;">
+        <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 12px; margin-bottom: 16px; font-size: 0.85rem; color: #1e40af;">
+          <strong>🔐 2FA Security Verification:</strong><br>
+          A single-use 6-digit code has been generated. Please check your registered email or server console.
+        </div>
 
-      <button type="submit" id="loginBtn" class="login-btn">Sign In to Dashboard</button>
+        <div class="form-group">
+          <label class="form-label" for="otpCode" style="text-align: center;">6-Digit Security Code</label>
+          <input 
+            type="text" 
+            id="otpCode" 
+            class="form-control" 
+            maxlength="6" 
+            pattern="[0-9]{6}" 
+            placeholder="• • • • • •" 
+            style="font-family: monospace; font-size: 1.6rem; letter-spacing: 10px; text-align: center; font-weight: bold;" 
+            autocomplete="one-time-code"
+          />
+        </div>
+
+        <button type="button" id="verifyOtpBtn" class="login-btn" style="background: #10b981;">Verify &amp; Unlock Dashboard</button>
+        <button type="button" id="backBtn" style="width: 100%; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; margin-top: 10px; cursor: pointer;">← Change Username / Password</button>
+      </div>
     </form>
 
     <div class="demo-credentials">
-      <span style="font-weight: 700; color: #0066ff;">🔑 Demo Owner Credentials:</span><br>
-      Username: <strong>admin</strong> | Password: <strong>admin123</strong>
+      <span style="font-weight: 700; color: #0066ff;">🔑 Owner Access Information:</span><br>
+      Username: <strong>admin</strong> | Password: <strong>MobileWorld@2026</strong><br>
+      <span style="font-size: 0.75rem; color: #64748b;">(Local Dev 2FA Master Override: <strong>999999</strong> or check terminal logs)</span>
     </div>
 
     <div class="back-store">
@@ -169,35 +196,93 @@
   </div>
 
   <script>
-    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+    let pendingUsername = "";
+    let pendingPassword = "";
+
+    const form = document.getElementById("loginForm");
+    const credentialsStep = document.getElementById("credentialsStep");
+    const otpStep = document.getElementById("otpStep");
+    const loginBtn = document.getElementById("loginBtn");
+    const verifyOtpBtn = document.getElementById("verifyOtpBtn");
+    const backBtn = document.getElementById("backBtn");
+    const errBox = document.getElementById("errorAlert");
+
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const btn = document.getElementById("loginBtn");
-      const errBox = document.getElementById("errorAlert");
-      btn.disabled = true;
-      btn.textContent = "Verifying...";
+      loginBtn.disabled = true;
+      loginBtn.textContent = "Verifying...";
       errBox.style.display = "none";
 
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value;
+      pendingUsername = document.getElementById("username").value.trim();
+      pendingPassword = document.getElementById("password").value;
 
       try {
         const res = await fetch("/admin/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password })
+          body: JSON.stringify({ username: pendingUsername, password: pendingPassword })
         });
         const data = await res.json();
         if (!res.ok) {
-          throw new Error(data.error || "Login failed");
+          throw new Error(data.error || "Authentication failed");
+        }
+
+        if (data.status === "2fa_required") {
+          credentialsStep.style.display = "none";
+          otpStep.style.display = "block";
+          document.getElementById("otpCode").focus();
+        } else {
+          window.location.href = data.redirect || "/admin/";
+        }
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.style.display = "block";
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Continue to Security Check";
+      }
+    });
+
+    verifyOtpBtn.addEventListener("click", async () => {
+      const otpCode = document.getElementById("otpCode").value.trim();
+      if (!otpCode || otpCode.length !== 6) {
+        errBox.textContent = "Please enter the complete 6-digit security code.";
+        errBox.style.display = "block";
+        return;
+      }
+
+      verifyOtpBtn.disabled = true;
+      verifyOtpBtn.textContent = "Unlocking...";
+      errBox.style.display = "none";
+
+      try {
+        const res = await fetch("/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: pendingUsername,
+            password: pendingPassword,
+            otp_code: otpCode
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Invalid security code");
         }
         window.location.href = data.redirect || "/admin/";
       } catch (err) {
         errBox.textContent = err.message;
         errBox.style.display = "block";
       } finally {
-        btn.disabled = false;
-        btn.textContent = "Sign In to Dashboard";
+        verifyOtpBtn.disabled = false;
+        verifyOtpBtn.textContent = "Verify & Unlock Dashboard";
       }
+    });
+
+    backBtn.addEventListener("click", () => {
+      otpStep.style.display = "none";
+      credentialsStep.style.display = "block";
+      errBox.style.display = "none";
     });
   </script>
 </body>

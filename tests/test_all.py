@@ -509,3 +509,60 @@ def test_product_detail_page_and_catalog_render(client):
     assert "phone_oneplus.jpg" in prod_html
     assert "Activate Alert" in prod_html
 
+
+def test_admin_customer_pii_masking_and_reveal_audit(client, auth_customer, app):
+    """Admin orders API masks sensitive customer phone/address, and reveal endpoint logs audit trail."""
+    # Place an order as customer
+    res_order = auth_customer.post("/api/orders", json={
+        "customer_name": "Ramesh Kumar",
+        "customer_phone": "9876543210",
+        "delivery_address": "12 Cross Cut Road, Gandhipuram, Coimbatore, Tamil Nadu - 641012",
+        "payment_method": "COD",
+        "items": [{"product_id": 2, "quantity": 1}]
+    })
+    assert res_order.status_code == 201
+    order_id = res_order.get_json()["order"]["id"]
+
+    # Log in as admin
+    res_login = client.post("/admin/login", json={"username": "admin", "password": "admin123"})
+    assert res_login.status_code == 200
+
+    # 1. Fetch orders: Customer phone and address must be masked
+    res_orders = client.get("/api/admin/orders")
+    assert res_orders.status_code == 200
+    orders = res_orders.get_json()
+    target_order = next(o for o in orders if o["id"] == order_id)
+    assert target_order["pii_masked"] is True
+    assert "•••••" in target_order["customer_phone"]
+    assert "••••••" in target_order["delivery_address"]
+
+    # 2. Call reveal-pii endpoint
+    res_reveal = client.post(f"/api/admin/orders/{order_id}/reveal-pii")
+    assert res_reveal.status_code == 200
+    reveal_data = res_reveal.get_json()
+    assert reveal_data["customer_phone"] == "9876543210"
+    assert "12 Cross Cut Road" in reveal_data["delivery_address"]
+    assert reveal_data["audited"] is True
+
+    # 3. Verify audit log entry
+    with app.app_context():
+        log = ActivityLog.query.filter_by(action="CUSTOMER_PII_REVEALED", entity_id=order_id).first()
+        assert log is not None
+        assert "viewed unmasked PII" in log.details
+
+
+def test_admin_session_unlock(client):
+    """Admin unlock verifies password and rejects invalid attempts."""
+    # Log in first
+    client.post("/admin/login", json={"username": "admin", "password": "admin123"})
+
+    # Invalid password
+    res_fail = client.post("/api/admin/unlock", json={"password": "wrong"})
+    assert res_fail.status_code == 401
+    assert "Incorrect" in res_fail.get_json()["error"]
+
+    # Correct password
+    res_ok = client.post("/api/admin/unlock", json={"password": "admin123"})
+    assert res_ok.status_code == 200
+    assert res_ok.get_json()["status"] == "ok"
+

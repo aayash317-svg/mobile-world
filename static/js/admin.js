@@ -260,13 +260,21 @@ async function loadAdminOrders() {
         `;
       }
 
+      const revealBtnHtml = o.pii_masked ? `
+        <button id="reveal-btn-${o.id}" class="action-btn" style="font-size: 0.72rem; padding: 2px 7px; margin-top: 4px; background: #f0fdf4; color: #166534; border: 1px solid #86efac;" onclick="revealCustomerPii(${o.id})" title="Access is logged in audit trail">
+          👁️ Reveal Details
+        </button>
+      ` : `<span id="reveal-btn-${o.id}" style="font-size: 0.7rem; color: #166534; font-weight: 700;">✓ Audited</span>`;
+
       return `
         <tr>
           <td><strong style="color: #0066ff;">${o.order_reference}</strong></td>
           <td>${o.created_at || 'Just now'}</td>
           <td>
             <strong>${o.customer_name}</strong><br>
-            <span style="font-size: 0.8rem; color: #64748b;">📞 ${o.customer_phone}</span>
+            <span style="font-size: 0.8rem; color: #64748b;" id="phone-display-${o.id}">📞 ${o.customer_phone}</span>
+            <div id="addr-display-${o.id}" style="font-size: 0.75rem; color: #94a3b8; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${o.delivery_address}</div>
+            ${revealBtnHtml}
           </td>
           <td>${o.item_count} items</td>
           <td><strong>${o.total_amount_formatted}</strong></td>
@@ -290,6 +298,53 @@ document.getElementById("orderSearch").addEventListener("input", debounce(loadAd
 document.getElementById("orderStatusFilter").addEventListener("change", loadAdminOrders);
 document.getElementById("paymentStatusFilter").addEventListener("change", loadAdminOrders);
 
+async function revealCustomerPii(orderId) {
+  const btn = document.getElementById(`reveal-btn-${orderId}`);
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "Unmasking...";
+  }
+
+  try {
+    const res = await fetch(`/api/admin/orders/${orderId}/reveal-pii`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to reveal customer details");
+
+    // Update row
+    const phoneEl = document.getElementById(`phone-display-${orderId}`);
+    if (phoneEl) phoneEl.textContent = `📞 ${data.customer_phone}`;
+
+    const addrEl = document.getElementById(`addr-display-${orderId}`);
+    if (addrEl) {
+      addrEl.textContent = data.delivery_address;
+      addrEl.title = data.delivery_address;
+    }
+
+    if (btn) {
+      btn.outerHTML = `<span style="font-size: 0.7rem; color: #166534; font-weight: 700; background: #dcfce7; padding: 2px 6px; border-radius: 4px;">✓ Audited & Unlocked</span>`;
+    }
+
+    // Update order in cache
+    const cachedOrder = ordersCache.find(o => o.id === orderId);
+    if (cachedOrder) {
+      cachedOrder.customer_phone = data.customer_phone;
+      cachedOrder.customer_email = data.customer_email;
+      cachedOrder.delivery_address = data.delivery_address;
+      cachedOrder.pii_masked = false;
+    }
+
+  } catch (err) {
+    alert("Security Notice: " + err.message);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = "👁️ Reveal Details";
+    }
+  }
+}
+
 function openOrderModal(orderId) {
   const order = ordersCache.find(o => o.id === orderId);
   if (!order) return;
@@ -312,14 +367,22 @@ function openOrderModal(orderId) {
     </div>
   `).join("") : `<div style="font-size: 0.8rem; color: #94a3b8;">No status history recorded yet.</div>`;
 
+  const modalRevealBtn = order.pii_masked ? `
+    <button class="action-btn" style="font-size: 0.75rem; padding: 3px 8px; margin-top: 6px; background: #f0fdf4; color: #166534; border: 1px solid #86efac;" onclick="revealCustomerPii(${order.id}); openOrderModal(${order.id});">
+      👁️ Reveal Unmasked Details (Audit Logged)
+    </button>
+  ` : `<span style="font-size: 0.72rem; color: #166534; font-weight: 700; background: #dcfce7; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">✓ Audited & Unlocked</span>`;
+
   document.getElementById("modalOrderContent").innerHTML = `
     <div style="margin-bottom: 16px;">
       <h4 style="font-size: 0.95rem; margin-bottom: 6px;">Customer & Delivery Details:</h4>
-      <p style="font-size: 0.88rem; color: #334155;">
+      <p style="font-size: 0.88rem; color: #334155; line-height: 1.5;">
         <strong>${order.customer_name}</strong> (Phone: ${order.customer_phone})<br>
         Address: ${order.delivery_address}<br>
+        ${order.customer_email ? `Email: ${order.customer_email}<br>` : ''}
         ${order.order_notes ? `Notes: <em>${order.order_notes}</em>` : ''}
       </p>
+      ${modalRevealBtn}
     </div>
 
     <div style="margin-bottom: 16px;">
@@ -618,3 +681,64 @@ function debounce(func, wait) {
     timeout = setTimeout(later, wait);
   };
 }
+
+// --- Security Auto-Lock (15 Minutes Inactivity) ---
+let idleTimer = null;
+const IDLE_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+
+function resetIdleTimer() {
+  const lockModal = document.getElementById("idleLockModal");
+  if (lockModal && lockModal.style.display === "flex") {
+    return; // Already locked
+  }
+  if (idleTimer) clearTimeout(idleTimer);
+  idleTimer = setTimeout(lockDashboard, IDLE_TIMEOUT_MS);
+}
+
+function lockDashboard() {
+  const lockModal = document.getElementById("idleLockModal");
+  if (lockModal) {
+    lockModal.style.display = "flex";
+    const pwdInput = document.getElementById("unlockPassword");
+    if (pwdInput) {
+      pwdInput.value = "";
+      pwdInput.focus();
+    }
+    const errEl = document.getElementById("lockError");
+    if (errEl) errEl.style.display = "none";
+  }
+}
+
+["mousemove", "keydown", "click", "scroll"].forEach(evt => {
+  window.addEventListener(evt, resetIdleTimer, { passive: true });
+});
+resetIdleTimer();
+
+document.getElementById("unlockForm")?.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const pwd = document.getElementById("unlockPassword").value;
+  const errBox = document.getElementById("lockError");
+  const btn = document.getElementById("unlockBtn");
+  btn.disabled = true;
+  btn.textContent = "Unlocking...";
+  errBox.style.display = "none";
+
+  try {
+    const res = await fetch("/api/admin/unlock", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pwd })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Incorrect owner password");
+
+    document.getElementById("idleLockModal").style.display = "none";
+    resetIdleTimer();
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.style.display = "block";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Unlock Dashboard";
+  }
+});

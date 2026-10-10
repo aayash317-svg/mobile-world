@@ -83,15 +83,37 @@ class Order(db.Model):
         rand_code = uuid.uuid4().hex[:4].upper()
         return f"MW-{prefix}-{rand_code}"
 
-    def to_dict(self, include_items=True):
+    def to_dict(self, include_items=True, mask_pii=False):
+        phone = self.customer_phone
+        email = self.customer_email
+        address = self.delivery_address
+
+        if mask_pii:
+            if phone and len(phone) >= 5:
+                phone = f"{phone[:5]}•••••"
+            elif phone:
+                phone = "••••••••••"
+
+            if email and "@" in email:
+                parts = email.split("@")
+                email = f"{parts[0][:2]}••••@{parts[1]}"
+
+            if address:
+                addr_parts = [p.strip() for p in address.split(",") if p.strip()]
+                if len(addr_parts) > 1:
+                    address = f"••••••, {addr_parts[-1]}"
+                else:
+                    address = "•••••• (Tamil Nadu)"
+
         data = {
             "id": self.id,
             "order_reference": self.order_reference,
             "customer_id": self.customer_id,
             "customer_name": self.customer_name,
-            "customer_phone": self.customer_phone,
-            "customer_email": self.customer_email,
-            "delivery_address": self.delivery_address,
+            "customer_phone": phone,
+            "customer_email": email,
+            "delivery_address": address,
+            "pii_masked": mask_pii,
             "order_notes": self.order_notes,
             "order_status": self.order_status,
             "payment_status": self.payment_status,

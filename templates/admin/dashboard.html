@@ -187,6 +187,22 @@
 
     <!-- Tab 2: Orders Management -->
     <div id="tab-orders" class="tab-panel">
+      <!-- Customer Data Privacy Shield Banner -->
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 1.5rem;">🛡️</span>
+          <div>
+            <strong style="color: #166534; font-size: 0.9rem;">Customer Privacy Protection Mode Active</strong>
+            <p style="font-size: 0.8rem; color: #15803d; margin: 0;">
+              Customer phone numbers and physical delivery addresses are masked by default to safeguard customer data against unauthorized viewing or shoulder surfing. Click <strong>Reveal</strong> on any order to view unmasked details. (Access is logged to the Audit Trail).
+            </p>
+          </div>
+        </div>
+        <span style="background: #dcfce7; color: #166534; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 50px; white-space: nowrap; border: 1px solid #86efac;">
+          AUDIT ENFORCED
+        </span>
+      </div>
+
       <div class="table-card">
         <div class="table-toolbar">
           <input type="text" id="orderSearch" class="search-field" placeholder="Search by Order Ref, Customer, Phone..." />
@@ -395,6 +411,33 @@
           </div>
           <button type="submit" class="action-btn collect" style="width: 100%; padding: 12px; font-size: 0.95rem;">Create Product Record</button>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Idle Auto-Lock Security Modal -->
+  <div id="idleLockModal" class="modal-backdrop" style="display: none; z-index: 9999; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px);">
+    <div class="modal-box" style="max-width: 400px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+      <div style="font-size: 3rem; margin-bottom: 8px;">🔐</div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Dashboard Locked</h3>
+      <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 20px;">
+        To protect sensitive customer contact details and showroom financials from unauthorized viewing, this session was auto-locked after inactivity.
+      </p>
+
+      <div id="lockError" style="display: none; background: #fee2e2; color: #dc2626; border-radius: 8px; padding: 8px 12px; font-size: 0.8rem; margin-bottom: 12px; font-weight: 600;"></div>
+
+      <form id="unlockForm">
+        <div class="form-group" style="text-align: left;">
+          <label class="form-label" for="unlockPassword">Owner Password</label>
+          <input type="password" id="unlockPassword" class="form-control" placeholder="Enter password to resume" required autofocus />
+        </div>
+        <button type="submit" id="unlockBtn" class="action-btn collect" style="width: 100%; padding: 12px; font-size: 0.95rem;">Unlock Dashboard</button>
+      </form>
+
+      <div style="margin-top: 14px;">
+        <button onclick="document.getElementById('logoutBtn').click()" style="background: none; border: none; color: #64748b; font-size: 0.8rem; cursor: pointer; text-decoration: underline;">
+          Or Sign Out of Portal
+        </button>
       </div>
     </div>
   </div>
