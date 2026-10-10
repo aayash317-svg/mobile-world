@@ -51,3 +51,7 @@ backups/
 # Stitch export reference archives
 stitch_mobile_world_storefront_ui.zip
 stitch_mobile_world_storefront_ui/
+
+# Tools & Binaries
+cloudflared.exe
+
