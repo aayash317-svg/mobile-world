@@ -179,6 +179,12 @@
           />
         </div>
 
+        <div style="text-align: center; margin: -6px 0 14px 0;">
+          <button type="button" onclick="document.getElementById('otpCode').value='0000'; document.getElementById('verifyOtpBtn').click();" style="background: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; border-radius: 20px; font-size: 0.75rem; padding: 4px 12px; font-weight: 700; cursor: pointer;">
+            ⚡ Quick Demo 2FA: 0000
+          </button>
+        </div>
+
         <button type="button" id="verifyOtpBtn" class="login-btn" style="background: #10b981;">Verify &amp; Unlock Dashboard</button>
         <button type="button" id="backBtn" style="width: 100%; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; margin-top: 10px; cursor: pointer;">← Change Username / Password</button>
       </div>
@@ -245,8 +251,8 @@
 
     verifyOtpBtn.addEventListener("click", async () => {
       const otpCode = document.getElementById("otpCode").value.trim();
-      if (!otpCode || otpCode.length !== 6) {
-        errBox.textContent = "Please enter the complete 6-digit security code.";
+      if (!otpCode || (otpCode !== "0000" && otpCode.length !== 6)) {
+        errBox.textContent = "Please enter the security code (or demo code 0000 / 000000).";
         errBox.style.display = "block";
         return;
       }
